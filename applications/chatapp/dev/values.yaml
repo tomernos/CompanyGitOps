@@ -1,0 +1,49 @@
+# Helm Values - chatapp - dev
+# Override specific values as needed
+
+global:
+  namespace: "chatapp-dev"
+  company: "mycompany"
+
+backend:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: "654654526828.dkr.ecr.eu-central-1.amazonaws.com/chatapp"
+    tag: "dev-initial"  # Will be updated by CI
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
+frontend:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: "654654526828.dkr.ecr.eu-central-1.amazonaws.com/chatapp"
+    tag: "dev-initial"  # Will be updated by CI
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "128Mi"
+      cpu: "100m"
+
+ingress:
+  enabled: true
+  hosts:
+    - host: "chatapp-dev.tomernos.xyz"
+      paths:
+        - path: /api
+          pathType: Prefix
+          serviceName: "chatapp-backend"
+          servicePort: 5000
+        - path: /
+          pathType: Prefix
+          serviceName: "chatapp-frontend"
+          servicePort: 80
+

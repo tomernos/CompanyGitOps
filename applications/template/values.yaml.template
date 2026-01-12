@@ -1,0 +1,50 @@
+# Helm Values - {{APP_NAME}} - {{ENV_NAME}}
+# Generated from template with company config
+# Override specific values as needed
+
+global:
+  namespace: "{{APP_NAME}}-{{ENV_NAME}}"
+  company: "{{COMPANY_NAME}}"
+
+backend:
+  enabled: true
+  replicaCount: {{REPLICA_COUNT_DEV}}
+  image:
+    repository: "{{ECR_REGISTRY}}/{{APP_NAME}}"
+    tag: "{{VERSION}}"
+  resources:
+    requests:
+      memory: "{{BACKEND_MEMORY_REQUEST}}"
+      cpu: "{{BACKEND_CPU_REQUEST}}"
+    limits:
+      memory: "{{BACKEND_MEMORY_LIMIT}}"
+      cpu: "{{BACKEND_CPU_LIMIT}}"
+
+frontend:
+  enabled: true
+  replicaCount: {{REPLICA_COUNT_DEV}}
+  image:
+    repository: "{{ECR_REGISTRY}}/{{APP_NAME}}"
+    tag: "{{VERSION}}"
+  resources:
+    requests:
+      memory: "{{FRONTEND_MEMORY_REQUEST}}"
+      cpu: "{{FRONTEND_CPU_REQUEST}}"
+    limits:
+      memory: "{{FRONTEND_MEMORY_LIMIT}}"
+      cpu: "{{FRONTEND_CPU_LIMIT}}"
+
+ingress:
+  enabled: true
+  hosts:
+    - host: "{{APP_NAME}}-{{ENV_NAME}}.{{COMPANY_DOMAIN}}"
+      paths:
+        - path: /api
+          pathType: Prefix
+          serviceName: "{{APP_NAME}}-backend"
+          servicePort: 5000
+        - path: /
+          pathType: Prefix
+          serviceName: "{{APP_NAME}}-frontend"
+          servicePort: 80
+

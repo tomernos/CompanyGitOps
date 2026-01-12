@@ -1,0 +1,23 @@
+# Environment-Specific Configuration - chatapp - dev
+
+environment: "dev"
+namespace: "chatapp-dev"
+
+# Application-specific overrides
+app:
+  name: "chatapp"
+  helm_chart_path: "../../../ChatApplication/helm-chart"  # Relative path to app's helm chart
+
+# Resource overrides
+resources:
+  backend:
+    replicaCount: 1
+  frontend:
+    replicaCount: 1
+
+# Feature flags
+features:
+  monitoring: true
+  logging: true
+  tracing: false
+

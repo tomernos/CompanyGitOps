@@ -1,0 +1,47 @@
+# Company-Wide Configuration
+# Replace these values for different companies/projects
+
+company:
+  name: "mycompany"
+  domain: "tomernos.xyz"
+  
+aws:
+  account_id: "654654526828"
+  region: "eu-central-1"
+  ecr_registry: "${aws.account_id}.dkr.ecr.${aws.region}.amazonaws.com"
+
+# Environment definitions
+environments:
+  - name: dev
+    namespace_suffix: "dev"
+    domain_suffix: "dev"
+  - name: staging
+    namespace_suffix: "staging"
+    domain_suffix: "staging"
+  - name: prod
+    namespace_suffix: "prod"
+    domain_suffix: "prod"
+
+# Default resource limits (can be overridden per app/env)
+default_resources:
+  backend:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+  frontend:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "128Mi"
+      cpu: "100m"
+
+# Default replica counts (can be overridden per app/env)
+default_replicas:
+  dev: 1
+  staging: 2
+  prod: 2
+

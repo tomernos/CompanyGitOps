@@ -1,0 +1,24 @@
+# Environment-Specific Configuration - {{APP_NAME}} - {{ENV_NAME}}
+# Override company defaults here
+
+environment: "{{ENV_NAME}}"
+namespace: "{{APP_NAME}}-{{ENV_NAME}}"
+
+# Application-specific overrides
+app:
+  name: "{{APP_NAME}}"
+  helm_chart_path: "../../../ChatApplication/helm-chart"  # Relative path to app's helm chart
+
+# Resource overrides (optional)
+resources:
+  backend:
+    replicaCount: {{REPLICA_COUNT_DEV}}
+  frontend:
+    replicaCount: {{REPLICA_COUNT_DEV}}
+
+# Feature flags (optional)
+features:
+  monitoring: true
+  logging: true
+  tracing: false
+
