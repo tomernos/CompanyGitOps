@@ -2,14 +2,14 @@
 # Application: chatapp
 # Environment: dev
 # DO NOT manually edit - CI will overwrite changes
-# Last updated: 2026-01-15T20:44:15Z
+# Last updated: 2026-01-15T20:54:00Z
 
-version: "dev-858ad74"
+version: "dev-d3c4d47"
 ecr_registry: "654654526828.dkr.ecr.eu-central-1.amazonaws.com/chatapp"
 ecr_repo: "chatapp"
-backend_image: "654654526828.dkr.ecr.eu-central-1.amazonaws.com/chatapp:backend-dev-858ad74"
-frontend_image: "654654526828.dkr.ecr.eu-central-1.amazonaws.com/chatapp:frontend-dev-858ad74"
-deployed_at: "2026-01-15T20:44:15Z"
+backend_image: "654654526828.dkr.ecr.eu-central-1.amazonaws.com/chatapp:backend-dev-d3c4d47"
+frontend_image: "654654526828.dkr.ecr.eu-central-1.amazonaws.com/chatapp:frontend-dev-d3c4d47"
+deployed_at: "2026-01-15T20:54:00Z"
 deployed_by: "jenkins"
-git_commit: "858ad7495b16bb7293cf337c1b3e4a71c9604704"
+git_commit: "d3c4d474390ddb4c613b38e29e157013d2b4070d"
 git_branch: "develop"
