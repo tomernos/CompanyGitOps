@@ -1,0 +1,302 @@
+# =========================================
+# ConnectHub - Parent Chart Values
+# Microservices Architecture with Subcharts
+# =========================================
+
+# Global settings (accessible to all subcharts via .Values.global)
+global:
+  dockerhubSecretName: dockerhub-secret
+  namespace: chatapp-prod
+
+# =========================================
+# BACKEND SUBCHART
+# =========================================
+backend:
+  enabled: true
+  replicaCount: 2
+  
+  image:
+    repository: tomernos/connecthub-backend
+    tag: d2db796
+    pullPolicy: Always
+  
+  privateRepository:
+    enabled: true
+    secretName: dockerhub-secret
+  
+  serviceAccount:
+    create: false
+    name: "chatapp-sa"
+  
+  # Enable AWS Secrets Manager integration
+  secretsProvider:
+    enabled: true
+    className: "chatapp-secrets"
+  
+  initContainers:
+    - name: wait-for-postgres
+      image: busybox:1.36
+      command:
+        - 'sh'
+        - '-c'
+        - |
+          echo "Waiting for PostgreSQL..."
+          until nc -z chatapp-postgres 5432; do sleep 2; done
+          echo "PostgreSQL ready!"
+  
+  env:
+    FLASK_APP: run.py
+    FLASK_ENV: production
+    DB_HOST: chatapp-postgres
+    DB_PORT: "5432"
+    DB_NAME: chatapp
+    DB_USER: chatuser
+    REDIS_HOST: chatapp-redis
+    REDIS_PORT: "6379"
+    RABBITMQ_HOST: chatapp-rabbitmq
+    RABBITMQ_PORT: "5672"
+    RABBITMQ_USER: guest
+  
+  envFrom:
+    - secretRef:
+        name: backend-secret
+  
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 100m
+    limits:
+      memory: 256Mi
+      cpu: 200m
+  
+  monitoring:
+    enabled: true
+    scrapeInterval: 15s
+    scrapeTimeout: 10s
+
+# =========================================
+# FRONTEND SUBCHART
+# =========================================
+frontend:
+  enabled: true
+  replicaCount: 2
+  
+  image:
+    repository: tomernos/connecthub-frontend
+    tag: d2db796
+    pullPolicy: Always
+  
+  env:
+    API_URL: http://chatapp-backend:5000
+    BACKEND_URL: http://chatapp-backend:5000  # For nginx.conf proxy_pass substitution
+    NODE_ENV: production
+  
+  resources:
+    requests:
+      memory: 64Mi
+      cpu: 50m
+    limits:
+      memory: 128Mi
+      cpu: 100m
+
+# =========================================
+# REDIS SUBCHART
+# =========================================
+redis:
+  enabled: true
+  replicaCount: 1
+  
+  image:
+    repository: redis
+    tag: "7-alpine"
+    pullPolicy: IfNotPresent
+  
+  persistence:
+    enabled: false  # Enable in production
+  
+  resources:
+    requests:
+      memory: 64Mi
+      cpu: 50m
+    limits:
+      memory: 128Mi
+      cpu: 100m
+
+# ========================================= 
+# POSTGRES SUBCHART
+# =========================================#
+postgres:
+  enabled: true
+  replicaCount: 1
+  
+  image:
+    repository: postgres
+    tag: "16-alpine"
+    pullPolicy: IfNotPresent
+  
+  env:
+    POSTGRES_DB: chatapp
+    POSTGRES_USER: chatuser
+    PGDATA: /var/lib/postgresql/data/pgdata
+  
+  envFrom:
+    - secretRef:
+        name: postgres-secret
+  
+  secretsProvider:
+    enabled: true  # Enable AWS Secrets Manager CSI Driver
+    className: "chatapp-secrets"
+    volumeName: "secrets-store-inline"
+  
+  persistence:
+    enabled: false  # Enable in production
+  
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 100m
+    limits:
+      memory: 256Mi
+      cpu: 200m
+
+# =========================================
+# RABBITMQ SUBCHART
+# =========================================
+rabbitmq:
+  enabled: true
+  replicaCount: 1
+  
+  image:
+    repository: rabbitmq
+    tag: "3-management-alpine"
+    pullPolicy: IfNotPresent
+  
+  env:
+    RABBITMQ_DEFAULT_USER: guest
+  
+  envFrom:
+    - secretRef:
+        name: rabbitmq-secret
+  
+  secretsProvider:
+    enabled: true  # Enable AWS Secrets Manager CSI Driver
+    className: "chatapp-secrets"
+    volumeName: "secrets-store-inline"
+  
+  persistence:
+    enabled: false  # Enable in production
+  
+  resources:
+    requests:
+      memory: 256Mi  # Increased from 128Mi to avoid memory high watermark alarm
+      cpu: 100m
+    limits:
+      memory: 512Mi  # Increased from 256Mi
+      cpu: 200m
+
+# =========================================
+# PARENT CHART RESOURCES
+# (Shared resources, secrets, ingress)
+# =========================================
+
+secrets:
+  backend: {}
+  postgres: {}
+  rabbitmq: {}
+  
+  dockerhub:
+    enabled: true
+    secretName: "dockerhub-secret"
+    config: "eyJhdXRocyI6eyJodHRwczovL2luZGV4LmRvY2tlci5pby92MS8iOnsidXNlcm5hbWUiOiJ0b21lcm5vcyIsInBhc3N3b3JkIjoiZGNrcl9wYXRfc3lmV2RoM3hxdTlkWG90RGFtUnoxdU1TYmhRIiwiZW1haWwiOiJ0b21lcm5vczFAZW1haWwuY29tIiwiYXV0aCI6ImRHOXRaWEp1YjNNNlpHTnJjbDl3WVhSZmMzbG1WMlJvTTNoeGRUbGtXRzkwUkdGdFVub3hkVTFUWW1oUiJ9fX0="
+
+# SecretProviderClass (AWS Secrets Manager - ENABLED for production)
+secretProviderClasses:
+  chatapp-secrets:
+    enabled: true  # Using AWS Secrets Manager
+    provider: aws
+    parameters:
+      region: "eu-central-1"
+      usePodIdentity: "true"
+      objects:
+        - objectName: "chatapp/secret-key"
+          objectType: "secretsmanager"
+          objectAlias: "SECRET_KEY"
+        - objectName: "chatapp/db-password"
+          objectType: "secretsmanager"
+          objectAlias: "DB_PASSWORD"
+        - objectName: "chatapp/rabbitmq-password"
+          objectType: "secretsmanager"
+          objectAlias: "RABBITMQ_PASSWORD"
+    secretObjects:
+      - secretName: backend-secret
+        type: Opaque
+        data:
+          - objectName: "SECRET_KEY"
+            key: "SECRET_KEY"
+          - objectName: "DB_PASSWORD"
+            key: "DB_PASSWORD"
+          - objectName: "RABBITMQ_PASSWORD"
+            key: "RABBITMQ_PASSWORD"
+      - secretName: postgres-secret
+        type: Opaque
+        data:
+          - objectName: "DB_PASSWORD"
+            key: "POSTGRES_PASSWORD"
+      - secretName: rabbitmq-secret
+        type: Opaque
+        data:
+          - objectName: "RABBITMQ_PASSWORD"
+            key: "RABBITMQ_DEFAULT_PASS"
+
+# ServiceAccounts (Pod Identity)
+serviceAccounts:
+  chatapp-sa:
+    enabled: true  # Enable for AWS Pod Identity
+    annotations: {}
+    # ServiceAccounts (Using IRSA as temporary workaround for Pod Identity agent issue)
+    #annotations:
+    #  eks.amazonaws.com/role-arn: "arn:aws:iam::654654526828:role/chatapp-secrets-role"  # IRSA annotation (temporary workaround)
+
+# Ingress
+# Base configuration - overridden by environment-specific values files:
+# - values-dev.yaml (chatapp-dev.tomernos.xyz)
+# - values-staging.yaml (chatapp-staging.tomernos.xyz)
+# - values-prod.yaml (chatapp-prod.tomernos.xyz)
+#
+# Supports multiple hosts for scalability and flexibility
+# Example: Can add additional hosts like api.chatapp-dev.tomernos.xyz
+ingress:
+  enabled: true
+  className: nginx
+  
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-http01  
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  
+  # Hosts array - supports multiple hosts (scalable, modular)
+  # Each host can have different paths and services
+  hosts:
+    - host: chatapp-dev.tomernos.xyz  # Default, overridden by env-specific files
+      paths:
+        - path: /api
+          pathType: Prefix
+          serviceName: chatapp-backend
+          servicePort: 5000
+        - path: /
+          pathType: Prefix
+          serviceName: chatapp-frontend
+          servicePort: 80
+    # Example: Add more hosts as needed
+    # - host: api.chatapp-dev.tomernos.xyz
+    #   paths:
+    #     - path: /
+    #       pathType: Prefix
+    #       serviceName: chatapp-backend
+    #       servicePort: 5000
+  
+  # TLS configuration
+  # If hosts not specified, will automatically use all hosts from ingress.hosts
+  tls:
+    - secretName: chatapp-tls
+      # hosts: []  # Empty = use all hosts from ingress.hosts (automatic)

@@ -1,0 +1,72 @@
+# =========================================
+# RabbitMQ Subchart - Default Values
+# =========================================
+
+enabled: true
+replicaCount: 1
+
+image:
+  repository: rabbitmq
+  tag: "3-management-alpine"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  amqpPort: 5672
+  managementPort: 15672
+
+env:
+  RABBITMQ_DEFAULT_USER: guest
+
+envFrom:
+  - secretRef:
+      name: rabbitmq-secret
+
+# Secrets Provider (AWS Secrets Manager CSI Driver)
+secretsProvider:
+  enabled: false  # Set to true in parent values.yaml for production
+  className: "chatapp-secrets"  # SecretProviderClass name
+  volumeName: "secrets-store-inline"
+
+resources:
+  requests:
+    memory: 256Mi
+    cpu: 200m
+  limits:
+    memory: 512Mi
+    cpu: 400m
+
+readinessProbe:
+  exec:
+    command:
+      - sh
+      - -c
+      - rabbitmq-diagnostics check_running
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5  # Increased from 1 to 5 seconds
+  successThreshold: 1
+  failureThreshold: 3
+
+livenessProbe:
+  exec:
+    command:
+      - sh
+      - -c
+      - rabbitmq-diagnostics ping
+  initialDelaySeconds: 30
+  periodSeconds: 30
+  timeoutSeconds: 5  # Increased from 1 to 5 seconds
+  successThreshold: 1
+  failureThreshold: 3
+
+persistence:
+  enabled: false
+  # storageClass: "gp3"
+  # accessMode: ReadWriteOnce
+  # size: 8Gi
+  # mountPath: /var/lib/rabbitmq
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

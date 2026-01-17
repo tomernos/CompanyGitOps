@@ -1,0 +1,20 @@
+{{- range $component := list "backend" "postgres" "rabbitmq" }}
+{{- $config := index $.Values $component }}
+{{- if and $config.enabled (hasKey $config "configMap") $config.configMap.create }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $config.configMap.name }}
+  namespace: {{ include "connecthub.namespace" $ }}
+  labels:
+    app: {{ $component }}
+    {{- include "connecthub.labels" $ | nindent 4 }}
+
+data:
+  {{- range $key, $value := $config.env }}
+  {{ $key | upper }}: {{ $value | toString | quote }}
+  {{- end }}
+
+{{- end }}
+{{- end }}

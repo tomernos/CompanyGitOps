@@ -1,0 +1,88 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: chatapp-dev
+  namespace: argocd
+  # Finalizer ensures cascading deletes
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    app: chatapp
+    environment: dev
+spec:
+  # =========================================
+  # Project
+  # =========================================
+  project: chatapp
+  
+  # =========================================
+  # Source (Git Repository)
+  # =========================================
+  source:
+    # GitOps repository URL
+    repoURL: https://github.com/tomernos/CompanyGitOps.git
+    targetRevision: main
+    path: applications/chatapp/helm-chart
+    
+    # Helm configuration
+    helm:
+      releaseName: chatapp-dev
+      valueFiles:
+        - ../dev/values.yaml  # Dev-specific values
+  
+  # =========================================
+  # Destination (Target Cluster & Namespace)
+  # =========================================
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: chatapp-dev
+  
+  # =========================================
+  # Sync Policy
+  # =========================================
+  syncPolicy:
+    # Automated sync settings
+    automated:
+      prune: true        # Delete resources not in Git
+      selfHeal: true     # Auto-sync if cluster state drifts
+      allowEmpty: false  # Prevent deletion of all resources
+    
+    # Sync options
+    syncOptions:
+      - CreateNamespace=true     # Auto-create namespace if missing
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true           # Delete resources after new ones are healthy
+      - ApplyOutOfSyncOnly=true  # Only sync out-of-sync resources
+      - RespectIgnoreDifferences=true
+    
+    # Retry strategy
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  
+  # =========================================
+  # Ignore Differences
+  # =========================================
+  ignoreDifferences:
+    # Ignore fields that change automatically
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas  # Ignore if HPA is managing replicas
+    
+    - group: apps
+      kind: StatefulSet
+      jsonPointers:
+        - /spec/volumeClaimTemplates/0/metadata/annotations
+  
+  # =========================================
+  # Health Assessment
+  # =========================================
+  # Custom health checks (if needed)
+  # info:
+  #   - name: Version
+  #     value: '{{.status.sync.revision}}'
+

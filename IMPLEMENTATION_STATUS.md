@@ -104,3 +104,4 @@ CompanyGitOps/
 - `CompanyGitOps/README.md` - Repository documentation
 - `CompanyGitOps/applications/chatapp/README.md` - Application docs
 
+

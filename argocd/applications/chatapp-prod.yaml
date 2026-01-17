@@ -1,0 +1,61 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: chatapp-prod
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    app: chatapp
+    environment: prod
+spec:
+  project: chatapp
+  
+  source:
+    repoURL: https://github.com/tomernos/CompanyGitOps.git
+    targetRevision: main
+    path: applications/chatapp/helm-chart
+    
+    # Helm configuration
+    helm:
+      releaseName: chatapp-prod
+      valueFiles:
+        - ../prod/values.yaml  # Prod-specific values
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: chatapp-prod
+  
+  syncPolicy:
+    # PRODUCTION: Manual sync only (no auto-sync)
+    # automated:
+    #   prune: false      # Safer for prod - don't auto-delete
+    #   selfHeal: false   # No auto-healing in prod
+    
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+      - ApplyOutOfSyncOnly=true
+    
+    retry:
+      limit: 3  # Fewer retries in prod
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
+  
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+  
+  # =========================================
+  # Production-specific settings
+  # =========================================
+  # Require manual approval before sync
+  # syncPolicy:
+  #   syncOptions:
+  #     - Validate=true  # Extra validation
+

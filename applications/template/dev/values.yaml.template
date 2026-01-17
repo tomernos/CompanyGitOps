@@ -48,3 +48,4 @@ ingress:
           serviceName: "{{APP_NAME}}-frontend"
           servicePort: 80
 
+

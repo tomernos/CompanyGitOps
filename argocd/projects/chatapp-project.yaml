@@ -1,0 +1,156 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: chatapp
+  namespace: argocd
+  # Finalizer ensures orderly deletion
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  # Project description
+  description: ChatApp - Real-time messaging application
+  
+  # =========================================
+  # Source Repositories
+  # =========================================
+  sourceRepos:
+    # Git repository containing application manifests
+    - 'https://github.com/tomernos/CompanyGitOps.git'
+    # Add Helm chart repositories if needed
+    - 'https://charts.bitnami.com/bitnami'
+  
+  # =========================================
+  # Destination Clusters & Namespaces
+  # =========================================
+  destinations:
+    # Dev environment
+    - namespace: chatapp-dev
+      server: https://kubernetes.default.svc
+    
+    # Staging environment
+    - namespace: chatapp-staging
+      server: https://kubernetes.default.svc
+    
+    # Prod environment
+    - namespace: chatapp-prod
+      server: https://kubernetes.default.svc
+    
+    # Allow argocd namespace for app-of-apps pattern
+    - namespace: argocd
+      server: https://kubernetes.default.svc
+  
+  # =========================================
+  # Cluster Resource Whitelist
+  # =========================================
+  clusterResourceWhitelist:
+    # Allowed cluster-scoped resources
+    - group: ''
+      kind: Namespace
+    - group: 'rbac.authorization.k8s.io'
+      kind: ClusterRole
+    - group: 'rbac.authorization.k8s.io'
+      kind: ClusterRoleBinding
+  
+  # =========================================
+  # Namespace Resource Whitelist (what can be deployed)
+  # =========================================
+  namespaceResourceWhitelist:
+    # Core resources
+    - group: ''
+      kind: ConfigMap
+    - group: ''
+      kind: Secret
+    - group: ''
+      kind: Service
+    - group: ''
+      kind: ServiceAccount
+    - group: ''
+      kind: PersistentVolumeClaim
+    
+    # Workloads
+    - group: 'apps'
+      kind: Deployment
+    - group: 'apps'
+      kind: StatefulSet
+    - group: 'apps'
+      kind: DaemonSet
+    - group: 'batch'
+      kind: Job
+    - group: 'batch'
+      kind: CronJob
+    
+    # Networking
+    - group: 'networking.k8s.io'
+      kind: Ingress
+    - group: 'networking.k8s.io'
+      kind: NetworkPolicy
+    
+    # Autoscaling
+    - group: 'autoscaling'
+      kind: HorizontalPodAutoscaler
+    
+    # Monitoring
+    - group: 'monitoring.coreos.com'
+      kind: ServiceMonitor
+    - group: 'monitoring.coreos.com'
+      kind: PodMonitor
+  
+  # =========================================
+  # Roles (RBAC for project)
+  # =========================================
+  roles:
+    # Dev team - can sync dev environment only
+    - name: dev-team
+      description: Developers - can sync dev apps
+      policies:
+        - p, proj:chatapp:dev-team, applications, get, chatapp/chatapp-dev, allow
+        - p, proj:chatapp:dev-team, applications, sync, chatapp/chatapp-dev, allow
+        - p, proj:chatapp:dev-team, applications, override, chatapp/chatapp-dev, allow
+      groups:
+        - dev-team
+    
+    # Ops team - full access to all environments
+    - name: ops-team
+      description: Operations team - full access
+      policies:
+        - p, proj:chatapp:ops-team, applications, *, chatapp/*, allow
+      groups:
+        - ops-team
+    
+    # Read-only role
+    - name: readonly
+      description: Read-only access
+      policies:
+        - p, proj:chatapp:readonly, applications, get, chatapp/*, allow
+      groups:
+        - viewers
+  
+  # =========================================
+  # Sync Windows (optional - maintenance windows)
+  # =========================================
+  # syncWindows:
+  #   # Block production syncs during business hours
+  #   - kind: deny
+  #     schedule: '0 9-17 * * 1-5'  # Mon-Fri 9am-5pm
+  #     duration: 8h
+  #     applications:
+  #       - chatapp-prod
+  #     manualSync: true  # Allow manual sync even in window
+  #   
+  #   # Allow dev syncs anytime
+  #   - kind: allow
+  #     schedule: '* * * * *'
+  #     duration: 24h
+  #     applications:
+  #       - chatapp-dev
+  
+  # =========================================
+  # Orphaned Resources (cleanup policy)
+  # =========================================
+  orphanedResources:
+    warn: true  # Warn about orphaned resources
+    # ignore:  # Resources to ignore during cleanup
+    #   - group: ''
+    #     kind: Secret
+    #     name: dont-delete-me
+
