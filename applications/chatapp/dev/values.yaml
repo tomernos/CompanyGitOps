@@ -5,20 +5,47 @@
 
 backend:
   enabled: true
+  replicaCount: 1
+  
+  # ECR Image - CI pipeline updates these tags
+  image:
+    repository: 654654526828.dkr.ecr.eu-central-1.amazonaws.com/chatapp-backend
+    tag: dev-latest  # CI will update this
+    pullPolicy: Always
+  
   monitoring:
     enabled: true  # Enable Prometheus scraping
     scrapeInterval: 15s
     scrapeTimeout: 10s
+  
   env:
     # OpenTelemetry - override namespace for dev environment
     OTEL_SERVICE_NAMESPACE: "chatapp-dev"
 
 frontend:
   enabled: true
+  replicaCount: 1
+  
+  # ECR Image - CI pipeline updates these tags
+  image:
+    repository: 654654526828.dkr.ecr.eu-central-1.amazonaws.com/chatapp-frontend
+    tag: dev-latest  # CI will update this
+    pullPolicy: Always
+  
   env:
     # Frontend needs correct backend URL to connect
     API_URL: http://chatapp-backend:5000
     BACKEND_URL: http://chatapp-backend:5000  # For nginx.conf proxy_pass substitution
+
+# Disable database services (use external/shared instances in dev)
+postgres:
+  enabled: false
+
+redis:
+  enabled: false
+
+rabbitmq:
+  enabled: false
 
 ingress:
   enabled: true  # Ensure ingress is enabled for dev
@@ -34,16 +61,8 @@ ingress:
           pathType: Prefix
           serviceName: chatapp-frontend
           servicePort: 80
-    # Example: Add more hosts as needed (e.g., separate API domain)
-    # - host: api-dev.tomernos.xyz
-    #   paths:
-    #     - path: /
-    #       pathType: Prefix
-    #       serviceName: chatapp-backend
-    #       servicePort: 5000
   
   # TLS - hosts will be automatically collected from ingress.hosts if not specified
   tls:
     - secretName: chatapp-tls
-      # hosts: []  # Empty = use all hosts from ingress.hosts (automatic)
 
