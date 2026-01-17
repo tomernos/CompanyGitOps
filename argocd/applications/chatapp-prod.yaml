@@ -18,7 +18,7 @@ spec:
     
     # Helm configuration
     helm:
-      releaseName: chatapp-prod
+      releaseName: chatapp
       valueFiles:
         - ../prod/values.yaml  # Prod-specific values
   

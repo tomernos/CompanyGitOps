@@ -18,7 +18,7 @@ spec:
     
     # Helm configuration
     helm:
-      releaseName: chatapp-staging
+      releaseName: chatapp
       valueFiles:
         - ../staging/values.yaml  # Staging-specific values
   
