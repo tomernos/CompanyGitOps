@@ -10,7 +10,7 @@ backend:
   # ECR Image - CI pipeline updates these tags
   image:
     repository: 654654526828.dkr.ecr.eu-central-1.amazonaws.com/chatapp-backend
-    tag: dev-latest  # CI will update this
+    tag: backend-dev-7593090  # CI will update this
     pullPolicy: Always
   
   monitoring:
@@ -29,7 +29,7 @@ frontend:
   # ECR Image - CI pipeline updates these tags
   image:
     repository: 654654526828.dkr.ecr.eu-central-1.amazonaws.com/chatapp-frontend
-    tag: dev-latest  # CI will update this
+    tag: frontend-dev-7593090  # CI will update this
     pullPolicy: Always
   
   env:
