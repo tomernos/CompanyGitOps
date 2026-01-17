@@ -9,7 +9,7 @@ backend:
   
   # ECR Image - CI pipeline updates these tags
   image:
-    repository: 654654526828.dkr.ecr.eu-central-1.amazonaws.com/chatapp-backend
+    repository: 654654526828.dkr.ecr.eu-central-1.amazonaws.com/chatapp
     tag: backend-dev-6cc2f22  # Updated by CI: 2026-01-17T18:32:36Z
     pullPolicy: Always
   
@@ -28,7 +28,7 @@ frontend:
   
   # ECR Image - CI pipeline updates these tags
   image:
-    repository: 654654526828.dkr.ecr.eu-central-1.amazonaws.com/chatapp-frontend
+    repository: 654654526828.dkr.ecr.eu-central-1.amazonaws.com/chatapp
     tag: frontend-dev-6cc2f22  # Updated by CI: 2026-01-17T18:32:36Z
     pullPolicy: Always
   
